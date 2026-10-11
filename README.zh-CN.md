@@ -86,7 +86,7 @@ flowchart TD
         Socket <--> Server["Python API 服务 (无公网端口)"]
         
         Server <--> Engine["营养计算与修订引擎 (health.py)"]
-        SyncWorker["后台同步线程 (intervals_sync.py)"] -->|定时轮询 (每小时)| Intervals
+        SyncWorker["后台同步线程 (intervals_sync.py)"] -->|每小时定时轮询| Intervals
         SyncWorker --> Engine
         
         Engine <--> SQLite[("SQLite 数据库 (WAL 模式)<br/>饮食 · 运动 · 身体指标 · 版本快照")]
