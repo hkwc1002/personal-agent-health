@@ -1,0 +1,42 @@
+name: Source and isolated health checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -B scripts/test.py
+      - run: python -B scripts/check_release.py
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and probe an empty disposable service
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build -t personal-agent-health:test .
+          test_root=$(mktemp -d)
+          mkdir "$test_root/data" "$test_root/run"
+          trap 'docker rm -f pah-ci >/dev/null 2>&1 || true' EXIT
+          docker run -d --name pah-ci --network none --read-only \
+            --user "$(id -u):$(id -g)" --cap-drop ALL \
+            --security-opt no-new-privileges:true \
+            -v "$test_root/data:/data" -v "$test_root/run:/run/personal-agent-health" \
+            personal-agent-health:test
+          for attempt in $(seq 1 20); do
+            if docker exec pah-ci python -B /app/check.py; then exit 0; fi
+            sleep 1
+          done
+          exit 1

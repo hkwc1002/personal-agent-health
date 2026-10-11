@@ -1,0 +1,4 @@
+name: personal-agent-health
+version: "0.1.0"
+description: "个人健康账本：拍照记餐、营养累计、体重趋势和可选手环同步。"
+author: "personal-agent-health contributors"
